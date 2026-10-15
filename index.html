@@ -12,139 +12,147 @@
     align-items: center;
     justify-content: center;
     background: #1a1a1a;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: "Helvetica Neue", "Arial Narrow", Arial, sans-serif;
   }
   .screen {
     position: relative;
     width: 390px;
     height: 844px;
     overflow: hidden;
-    background: linear-gradient(to bottom, #505153 0%, #2e2f30 60%, #1e1f20 100%);
+    background: linear-gradient(to bottom, #55575a 0%, #3a3b3d 35%, #222325 75%, #1d1e1f 100%);
     color: #fff;
     user-select: none;
     -webkit-user-select: none;
   }
-  .header {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 96px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding-bottom: 18px;
-  }
+
+  /* Header */
   .back {
     position: absolute;
-    left: 16px;
-    bottom: 14px;
-    width: 32px;
-    height: 32px;
+    left: 20px;
+    top: 58px;
+    width: 20px;
+    height: 20px;
     background: none;
     border: none;
-    color: #fff;
-    font-size: 24px;
     cursor: pointer;
   }
+  .back svg { width: 20px; height: 20px; stroke: #fff; stroke-width: 2; fill: none; }
   .title {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    width: 390px;
+    text-align: center;
     font-size: 16px;
     font-weight: 700;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.2px;
   }
-  .section { position: absolute; left: 16px; right: 16px; }
-  .section-title {
+
+  /* Text blocks */
+  .heading {
+    position: absolute;
+    left: 16px;
     font-size: 16px;
     font-weight: 700;
-    letter-spacing: 0.3px;
-    margin-bottom: 6px;
+    letter-spacing: 0.2px;
   }
-  .section-body {
+  .body {
+    position: absolute;
+    left: 16px;
+    width: 358px;
     font-size: 15px;
-    line-height: 1.35;
-    color: #e6e6e6;
+    line-height: 22px;
+    color: #f2f2f2;
   }
-  #delay-section { top: 116px; }
+  #adjustHeading { top: 116px; }
+  #adjustBody    { top: 142px; }
+  #metroHeading  { top: 412px; }
+  #metroBody     { top: 438px; }
 
   /* Ruler */
   .ruler {
     position: absolute;
-    top: 240px;
+    top: 232px;
     left: 0;
     width: 390px;
-    height: 56px;
+    height: 32px;
     cursor: grab;
     touch-action: none;
+    overflow: hidden;
   }
   .ruler:active { cursor: grabbing; }
   .track {
     position: absolute;
     top: 0;
     left: 0;
-    height: 56px;
-    width: 456px; /* 76 * 6px */
+    height: 32px;
+    width: 608px; /* 76 ms * 8px */
     will-change: transform;
   }
   .tick {
     position: absolute;
     bottom: 0;
     width: 2px;
-    height: 22px;
-    background: #d0d0d0;
-    border-radius: 1px;
+    height: 16px;
+    background: #848486;
   }
-  .tick.major { height: 34px; background: #fff; }
+  .tick.major {
+    height: 24px;
+  }
+  .tick {
+    transition: background-color 0.6s ease;
+  }
+  .tick.focus {
+    height: 32px;
+    background: #fff;
+    transition: none; /* the new focus tick snaps to white; the previous one fades out */
+  }
   .marker {
     position: absolute;
     left: 194px;
     top: 0;
     width: 2px;
-    height: 56px;
+    height: 32px;
     background: #fff;
     pointer-events: none;
   }
 
+  /* Readout */
   .readout {
     position: absolute;
-    top: 310px;
+    top: 282px;
     left: 0;
     width: 390px;
     text-align: center;
   }
   #value {
-    font-size: 56px;
+    font-size: 48px;
     font-weight: 700;
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
   .unit {
-    margin-top: 8px;
+    margin-top: 10px;
     font-size: 15px;
-    color: #e6e6e6;
+    color: #f2f2f2;
   }
 
-  /* Metronome */
-  #metro-section { top: 480px; }
-  .metro-controls {
-    position: absolute;
-    top: 96px;
-    left: 0;
-    width: 358px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
+  /* Play button */
   .play {
-    position: relative;
+    position: absolute;
+    left: 167px;
+    top: 504px;
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: #1c1c1c;
+    background: #1b1b1c;
     border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
   }
-  .play svg { width: 20px; height: 20px; fill: #fff; }
+  .play svg { width: 18px; height: 20px; fill: #fff; }
   .pulse {
     position: absolute;
     inset: -6px;
@@ -159,29 +167,30 @@
     100% { transform: scale(1.25); opacity: 0; }
   }
   .play-label {
-    margin-top: 12px;
+    position: absolute;
+    top: 576px;
+    left: 0;
+    width: 390px;
+    text-align: center;
     font-size: 15px;
     font-weight: 700;
-    letter-spacing: 0.4px;
+    letter-spacing: 0.3px;
   }
 </style>
 </head>
 <body>
 <div class="screen">
 
-  <div class="header">
-    <button class="back" aria-label="Back">&#8249;</button>
-    <div class="title">RCA LATENCY</div>
-  </div>
+  <button class="back" aria-label="Back">
+    <svg viewBox="0 0 20 20"><path d="M13 3 L6 10 L13 17"/></svg>
+  </button>
+  <div class="title">RCA LATENCY</div>
 
-  <div class="section" id="delay-section">
-    <div class="section-title">ADJUST AUDIO DELAY</div>
-    <div class="section-body">Change the audio delay on the RCA out port to sync with the broadcast audio.</div>
-  </div>
+  <div class="heading" id="adjustHeading">ADJUST AUDIO DELAY</div>
+  <div class="body" id="adjustBody">Change the audio delay on the RCA out port to sync with the broadcast audio.</div>
 
   <div class="ruler" id="ruler">
     <div class="track" id="track"></div>
-    <div class="marker"></div>
   </div>
 
   <div class="readout">
@@ -189,42 +198,41 @@
     <div class="unit">milliseconds</div>
   </div>
 
-  <div class="section" id="metro-section">
-    <div class="section-title">METRONOME</div>
-    <div class="section-body">You can use metronome to adjust the delay to compensate for latency on your &lt;Device name&gt;.</div>
+  <div class="heading" id="metroHeading">METRONOME</div>
+  <div class="body" id="metroBody">You can use metronome to adjust the delay to compensate for latency on your &lt;Device name&gt;.</div>
 
-    <div class="metro-controls">
-      <button class="play" id="playBtn" aria-label="Play">
-        <span class="pulse" id="pulse"></span>
-        <svg id="iconPlay" viewBox="0 0 20 20"><path d="M4 2 L18 10 L4 18 Z"/></svg>
-        <svg id="iconPause" viewBox="0 0 20 20" style="display:none"><rect x="3" y="2" width="4" height="16"/><rect x="13" y="2" width="4" height="16"/></svg>
-      </button>
-      <div class="play-label" id="playLabel">PLAY</div>
-    </div>
-  </div>
+  <button class="play" id="playBtn" aria-label="Play">
+    <span class="pulse" id="pulse"></span>
+    <svg id="iconPlay" viewBox="0 0 18 20"><path d="M2 1 L17 10 L2 19 Z"/></svg>
+    <svg id="iconPause" viewBox="0 0 18 20" style="display:none"><rect x="2" y="1" width="4.5" height="18"/><rect x="11.5" y="1" width="4.5" height="18"/></svg>
+  </button>
+  <div class="play-label" id="playLabel">PLAY</div>
 
 </div>
 
 <script>
-  const MIN = 0, MAX = 76, SPACING = 6, CENTER = 195, BPM = 120;
+  const MIN = 0, MAX = 76, SPACING = 8, CENTER = 195, BPM = 120;
 
   const track = document.getElementById('track');
   const ruler = document.getElementById('ruler');
   const valueEl = document.getElementById('value');
 
   let value = 0;
+  const ticks = [];
 
-  // Build ticks: one per millisecond, every 5th is major
+  // One tick per millisecond; every 5th is major
   for (let i = MIN; i <= MAX; i++) {
     const t = document.createElement('div');
     t.className = 'tick' + (i % 5 === 0 ? ' major' : '');
     t.style.left = (i * SPACING) + 'px';
     track.appendChild(t);
+    ticks.push(t);
   }
 
   function render() {
-    // Ticks slide left as value increases; marker stays fixed at centre
+    // Ticks slide left as the value rises; the tick under the centre becomes the white focus tick
     track.style.transform = `translateX(${CENTER - value * SPACING}px)`;
+    ticks.forEach((t, i) => t.classList.toggle('focus', i === value));
     valueEl.textContent = value;
   }
 
@@ -241,7 +249,7 @@
   ruler.addEventListener('pointermove', (e) => {
     if (!dragging) return;
     const delta = (e.clientX - startX) / SPACING;
-    // Dragging finger left moves ticks left, so value increases
+    // Dragging left moves the ticks left, which increases the value
     value = Math.round(Math.min(MAX, Math.max(MIN, startValue - delta)));
     render();
   });
@@ -250,7 +258,7 @@
   ruler.addEventListener('pointerup', endDrag);
   ruler.addEventListener('pointercancel', endDrag);
 
-  // Metronome (visual only, independent of delay value)
+  // Metronome (visual only, independent of the delay value)
   const playBtn = document.getElementById('playBtn');
   const pulse = document.getElementById('pulse');
   const iconPlay = document.getElementById('iconPlay');
