@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RCA Latency Prototype</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a1a;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .screen {
+    position: relative;
+    width: 390px;
+    height: 844px;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #505153 0%, #2e2f30 60%, #1e1f20 100%);
+    color: #fff;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .header {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 96px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 18px;
+  }
+  .back {
+    position: absolute;
+    left: 16px;
+    bottom: 14px;
+    width: 32px;
+    height: 32px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+  }
+  .title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .section { position: absolute; left: 16px; right: 16px; }
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+  }
+  .section-body {
+    font-size: 15px;
+    line-height: 1.35;
+    color: #e6e6e6;
+  }
+  #delay-section { top: 116px; }
+
+  /* Ruler */
+  .ruler {
+    position: absolute;
+    top: 240px;
+    left: 0;
+    width: 390px;
+    height: 56px;
+    cursor: grab;
+    touch-action: none;
+  }
+  .ruler:active { cursor: grabbing; }
+  .track {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 56px;
+    width: 456px; /* 76 * 6px */
+    will-change: transform;
+  }
+  .tick {
+    position: absolute;
+    bottom: 0;
+    width: 2px;
+    height: 22px;
+    background: #d0d0d0;
+    border-radius: 1px;
+  }
+  .tick.major { height: 34px; background: #fff; }
+  .marker {
+    position: absolute;
+    left: 194px;
+    top: 0;
+    width: 2px;
+    height: 56px;
+    background: #fff;
+    pointer-events: none;
+  }
+
+  .readout {
+    position: absolute;
+    top: 310px;
+    left: 0;
+    width: 390px;
+    text-align: center;
+  }
+  #value {
+    font-size: 56px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .unit {
+    margin-top: 8px;
+    font-size: 15px;
+    color: #e6e6e6;
+  }
+
+  /* Metronome */
+  #metro-section { top: 480px; }
+  .metro-controls {
+    position: absolute;
+    top: 96px;
+    left: 0;
+    width: 358px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .play {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #1c1c1c;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .play svg { width: 20px; height: 20px; fill: #fff; }
+  .pulse {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .pulse.beat { animation: beat 500ms ease-out; }
+  @keyframes beat {
+    0%   { transform: scale(0.95); opacity: 0.9; }
+    100% { transform: scale(1.25); opacity: 0; }
+  }
+  .play-label {
+    margin-top: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+  }
+</style>
+</head>
+<body>
+<div class="screen">
+
+  <div class="header">
+    <button class="back" aria-label="Back">&#8249;</button>
+    <div class="title">RCA LATENCY</div>
+  </div>
+
+  <div class="section" id="delay-section">
+    <div class="section-title">ADJUST AUDIO DELAY</div>
+    <div class="section-body">Change the audio delay on the RCA out port to sync with the broadcast audio.</div>
+  </div>
+
+  <div class="ruler" id="ruler">
+    <div class="track" id="track"></div>
+    <div class="marker"></div>
+  </div>
+
+  <div class="readout">
+    <div id="value">0</div>
+    <div class="unit">milliseconds</div>
+  </div>
+
+  <div class="section" id="metro-section">
+    <div class="section-title">METRONOME</div>
+    <div class="section-body">You can use metronome to adjust the delay to compensate for latency on your &lt;Device name&gt;.</div>
+
+    <div class="metro-controls">
+      <button class="play" id="playBtn" aria-label="Play">
+        <span class="pulse" id="pulse"></span>
+        <svg id="iconPlay" viewBox="0 0 20 20"><path d="M4 2 L18 10 L4 18 Z"/></svg>
+        <svg id="iconPause" viewBox="0 0 20 20" style="display:none"><rect x="3" y="2" width="4" height="16"/><rect x="13" y="2" width="4" height="16"/></svg>
+      </button>
+      <div class="play-label" id="playLabel">PLAY</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const MIN = 0, MAX = 76, SPACING = 6, CENTER = 195, BPM = 120;
+
+  const track = document.getElementById('track');
+  const ruler = document.getElementById('ruler');
+  const valueEl = document.getElementById('value');
+
+  let value = 0;
+
+  // Build ticks: one per millisecond, every 5th is major
+  for (let i = MIN; i <= MAX; i++) {
+    const t = document.createElement('div');
+    t.className = 'tick' + (i % 5 === 0 ? ' major' : '');
+    t.style.left = (i * SPACING) + 'px';
+    track.appendChild(t);
+  }
+
+  function render() {
+    // Ticks slide left as value increases; marker stays fixed at centre
+    track.style.transform = `translateX(${CENTER - value * SPACING}px)`;
+    valueEl.textContent = value;
+  }
+
+  // Drag
+  let dragging = false, startX = 0, startValue = 0;
+
+  ruler.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    startX = e.clientX;
+    startValue = value;
+    ruler.setPointerCapture(e.pointerId);
+  });
+
+  ruler.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const delta = (e.clientX - startX) / SPACING;
+    // Dragging finger left moves ticks left, so value increases
+    value = Math.round(Math.min(MAX, Math.max(MIN, startValue - delta)));
+    render();
+  });
+
+  const endDrag = () => { dragging = false; };
+  ruler.addEventListener('pointerup', endDrag);
+  ruler.addEventListener('pointercancel', endDrag);
+
+  // Metronome (visual only, independent of delay value)
+  const playBtn = document.getElementById('playBtn');
+  const pulse = document.getElementById('pulse');
+  const iconPlay = document.getElementById('iconPlay');
+  const iconPause = document.getElementById('iconPause');
+  const playLabel = document.getElementById('playLabel');
+  let playing = false, timer = null;
+
+  function beat() {
+    pulse.classList.remove('beat');
+    void pulse.offsetWidth; // restart animation
+    pulse.classList.add('beat');
+  }
+
+  playBtn.addEventListener('click', () => {
+    playing = !playing;
+    if (playing) {
+      beat();
+      timer = setInterval(beat, 60000 / BPM);
+    } else {
+      clearInterval(timer);
+      timer = null;
+    }
+    iconPlay.style.display = playing ? 'none' : 'block';
+    iconPause.style.display = playing ? 'block' : 'none';
+    playLabel.textContent = playing ? 'PAUSE' : 'PLAY';
+    playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+  });
+
+  render();
+</script>
+</body>
+</html>
