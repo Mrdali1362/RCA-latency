@@ -2,30 +2,65 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RCA Latency Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RCA Latency Test</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     background: #1a1a1a;
     font-family: "Helvetica Neue", "Arial Narrow", Arial, sans-serif;
-  }
-  .screen {
-    position: relative;
-    width: 390px;
-    height: 844px;
-    overflow: hidden;
-    background: linear-gradient(to bottom, #55575a 0%, #3a3b3d 35%, #222325 75%, #1d1e1f 100%);
     color: #fff;
+  }
+  .view {
+    display: none;
+    position: relative;
+    width: 100%;
+    max-width: 390px;
+    min-height: 100vh;
+    margin: 0 auto;
+    background: linear-gradient(to bottom, #55575a 0%, #3a3b3d 35%, #222325 75%, #1d1e1f 100%);
     user-select: none;
     -webkit-user-select: none;
   }
+  .view.active { display: block; }
+  .view.task { height: 844px; }
 
-  /* Header */
+  /* Intro and feedback (flow layout) */
+  .pad { padding: 64px 24px 40px; }
+  .pad h1 { font-size: 22px; margin-bottom: 16px; }
+  .pad p { font-size: 15px; line-height: 22px; color: #f2f2f2; margin-bottom: 16px; }
+  .pad label { display: block; font-size: 15px; font-weight: 700; margin: 20px 0 8px; }
+  .pad textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 15px;
+    background: rgba(0,0,0,0.25);
+    color: #fff;
+    border: 1px solid #848486;
+    border-radius: 4px;
+  }
+  .small { font-size: 13px; color: #c8c8c8; }
+
+  .btn {
+    display: block;
+    width: 100%;
+    margin-top: 28px;
+    height: 48px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    border-radius: 4px;
+    cursor: pointer;
+    background: #fff;
+    color: #1a1a1a;
+    border: 1px solid #fff;
+  }
+  .btn.outline { background: transparent; color: #fff; }
+
+  /* Task screen */
   .back {
     position: absolute;
     left: 20px;
@@ -41,14 +76,12 @@
     position: absolute;
     top: 60px;
     left: 0;
-    width: 390px;
+    width: 100%;
     text-align: center;
     font-size: 16px;
     font-weight: 700;
     letter-spacing: 0.2px;
   }
-
-  /* Text blocks */
   .heading {
     position: absolute;
     left: 16px;
@@ -56,7 +89,7 @@
     font-weight: 700;
     letter-spacing: 0.2px;
   }
-  .body {
+  .body-text {
     position: absolute;
     left: 16px;
     width: 358px;
@@ -64,18 +97,34 @@
     line-height: 22px;
     color: #f2f2f2;
   }
-  #adjustHeading { top: 116px; }
-  #adjustBody    { top: 142px; }
-  #metroHeading  { top: 412px; }
-  #metroBody     { top: 438px; }
+  #metroHeading  { top: 116px; }
+  #metroBody     { top: 142px; }
+  #adjustHeading { top: 320px; }
+  #adjustBody    { top: 346px; }
 
-  /* Ruler */
+  .sample {
+    position: absolute;
+    left: 16px;
+    top: 232px;
+    width: 358px;
+    height: 48px;
+    background: transparent;
+    border: 1px solid #848486;
+    border-radius: 2px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+  }
+
   .ruler {
     position: absolute;
-    top: 232px;
+    top: 438px;
     left: 0;
-    width: 390px;
-    height: 32px;
+    width: 100%;
+    height: 48px;
     cursor: grab;
     touch-action: none;
     overflow: hidden;
@@ -85,44 +134,30 @@
     position: absolute;
     top: 0;
     left: 0;
-    height: 32px;
-    width: 608px; /* 76 ms * 8px */
+    height: 48px;
+    width: 600px;
     will-change: transform;
   }
   .tick {
     position: absolute;
-    bottom: 0;
+    bottom: 8px;
     width: 2px;
     height: 16px;
     background: #848486;
-  }
-  .tick.major {
-    height: 24px;
-  }
-  .tick {
     transition: background-color 0.6s ease, height 0.6s ease;
   }
+  .tick.major { height: 16px; background: #fff; }
   .tick.focus {
     height: 32px;
-    background: #fff;
-    transition: none; /* the new focus tick snaps to white; the previous one fades out */
-  }
-  .marker {
-    position: absolute;
-    left: 194px;
-    top: 0;
-    width: 2px;
-    height: 32px;
-    background: #fff;
-    pointer-events: none;
+    background: #CF9E1F;
+    transition: none;
   }
 
-  /* Readout */
   .readout {
     position: absolute;
-    top: 282px;
+    top: 492px;
     left: 0;
-    width: 390px;
+    width: 100%;
     text-align: center;
   }
   #value {
@@ -131,63 +166,52 @@
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
-  .unit {
-    margin-top: 10px;
-    font-size: 15px;
-    color: #f2f2f2;
-  }
+  .unit { margin-top: 10px; font-size: 15px; color: #f2f2f2; }
 
-  /* Play button */
-  .play {
+  .confirm {
     position: absolute;
-    left: 167px;
-    top: 504px;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: #1b1b1c;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-  .play svg { width: 18px; height: 20px; fill: #fff; }
-  .pulse {
-    position: absolute;
-    inset: -6px;
-    border-radius: 50%;
-    border: 2px solid #fff;
-    opacity: 0;
-    pointer-events: none;
-  }
-  .pulse.beat { animation: beat 500ms ease-out; }
-  @keyframes beat {
-    0%   { transform: scale(0.95); opacity: 0.9; }
-    100% { transform: scale(1.25); opacity: 0; }
-  }
-  .play-label {
-    position: absolute;
-    top: 576px;
-    left: 0;
-    width: 390px;
-    text-align: center;
+    left: 16px;
+    top: 640px;
+    width: 358px;
+    height: 48px;
+    border-radius: 2px;
+    background: #fff;
+    border: 1px solid #fff;
+    color: #1a1a1a;
+    font-family: inherit;
     font-size: 15px;
     font-weight: 700;
     letter-spacing: 0.3px;
+    cursor: pointer;
   }
 </style>
 </head>
 <body>
-<div class="screen">
 
+<!-- 1. Intro -->
+<section class="view pad active" id="intro">
+  <h1>RCA Latency Test</h1>
+  <p>We would like to test our prototype for adjusting RCA latency for speakers that are connected via RCA output to Heddon.</p>
+  <p>You will hear two sounds. Start by playing the sample, then adjust the delay based on what you hear. Tap "Confirm sync" when you think they match.</p>
+  <p>At the end of the test, we will ask you 3 simple questions to understand how and if the prototype matches what you expected it to do. Your answers will be sent to us in the app team and will be removed after this short study.</p>
+  <p class="small">We record your delay adjustments, timings and the answers you give at the end. Results are only sent if you tap "Send results", from your own mail app, so your name and email address will be visible to us. All data will be removed at the end of the study.</p>
+  <button class="btn" id="startBtn">Start</button>
+</section>
+
+<!-- 2. Task -->
+<section class="view task" id="task">
   <button class="back" aria-label="Back">
     <svg viewBox="0 0 20 20"><path d="M13 3 L6 10 L13 17"/></svg>
   </button>
   <div class="title">RCA LATENCY</div>
 
-  <div class="heading" id="adjustHeading">ADJUST AUDIO DELAY</div>
-  <div class="body" id="adjustBody">Change the audio delay on the RCA out port to sync with the broadcast audio.</div>
+  <div class="heading" id="metroHeading">METRONOME</div>
+  <div class="body-text" id="metroBody">Play the 60 BPM metronome sample to help you adjust the audio output of your RCA-connected speaker to match the rest of your system.</div>
+
+  <button class="sample" id="playBtn"><span id="btnLabel">PLAY SAMPLE</span></button>
+
+  <div class="heading" id="adjustHeading">ADJUST DELAY</div>
+  <div class="body-text" id="adjustBody">Change the audio delay on the RCA out port to sync with the broadcast audio.</div>
 
   <div class="ruler" id="ruler">
     <div class="track" id="track"></div>
@@ -198,93 +222,224 @@
     <div class="unit">milliseconds</div>
   </div>
 
-  <div class="heading" id="metroHeading">METRONOME</div>
-  <div class="body" id="metroBody">You can use metronome to adjust the delay to compensate for latency on your &lt;Device name&gt;.</div>
+  <button class="confirm" id="confirmBtn">CONFIRM SYNC</button>
+</section>
 
-  <button class="play" id="playBtn" aria-label="Play">
-    <span class="pulse" id="pulse"></span>
-    <svg id="iconPlay" viewBox="0 0 18 20"><path d="M2 1 L17 10 L2 19 Z"/></svg>
-    <svg id="iconPause" viewBox="0 0 18 20" style="display:none"><rect x="2" y="1" width="4.5" height="18"/><rect x="11.5" y="1" width="4.5" height="18"/></svg>
-  </button>
-  <div class="play-label" id="playLabel">PLAY</div>
+<!-- 3. Feedback -->
+<section class="view pad" id="feedback">
+  <h1>A few questions</h1>
+  <label for="q1">How was this experience?</label>
+  <textarea id="q1"></textarea>
+  <label for="q2">Was anything confusing?</label>
+  <textarea id="q2"></textarea>
+  <label for="q3">If you could change one thing, what would it be?</label>
+  <textarea id="q3"></textarea>
+  <button class="btn" id="sendBtn">Send results</button>
+  <button class="btn outline" id="copyBtn">Copy results instead</button>
+</section>
 
-</div>
+<!-- 4. Done -->
+<section class="view pad" id="done">
+  <h1>Thank you</h1>
+  <p>Your results are ready to send. You can close this page.</p>
+</section>
 
 <script>
-  const MIN = 0, MAX = 76, SPACING = 8, CENTER = 195, BPM = 120;
+  // ---- Config ----
+  const CONFIG = {
+    resultsEmail: 'ali.dehghanpour@marshall.com',
+    bpm: 60,
+    valueMin: 0,
+    valueMax: 75,
+    spacing: 8
+  };
 
+  // Hidden mismatch for this session, 40 to 50 ms inclusive
+  const HIDDEN_OFFSET = 40 + Math.floor(Math.random() * 11);
+  const SESSION_ID = Math.random().toString(36).slice(2, 8).toUpperCase();
+
+  const log = {
+    start: 0,
+    drags: 0,
+    plays: 0,
+    changes: [{ t: 0, v: 0 }],
+    confirmAt: null,
+    finalValue: null
+  };
+
+  // ---- Views ----
+  function show(id) {
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === id));
+  }
+
+  // ---- Ruler ----
   const track = document.getElementById('track');
   const ruler = document.getElementById('ruler');
   const valueEl = document.getElementById('value');
-
-  let value = 0;
   const ticks = [];
+  let value = 0;
 
-  // One tick per millisecond; every 5th is major
-  for (let i = MIN; i <= MAX; i++) {
+  for (let i = CONFIG.valueMin; i <= CONFIG.valueMax; i++) {
     const t = document.createElement('div');
     t.className = 'tick' + (i % 5 === 0 ? ' major' : '');
-    t.style.left = (i * SPACING) + 'px';
+    t.style.left = (i * CONFIG.spacing) + 'px';
     track.appendChild(t);
     ticks.push(t);
   }
 
   function render() {
-    // Ticks slide left as the value rises; the tick under the centre becomes the white focus tick
-    track.style.transform = `translateX(${CENTER - value * SPACING}px)`;
+    const centre = ruler.clientWidth / 2;
+    track.style.transform = `translateX(${centre - value * CONFIG.spacing}px)`;
     ticks.forEach((t, i) => t.classList.toggle('focus', i === value));
     valueEl.textContent = value;
   }
 
-  // Drag
+  function setValue(v) {
+    if (v === value) return;
+    value = v;
+    log.changes.push({ t: Math.round(performance.now() - log.start), v });
+    render();
+    if (delayR) delayR.delayTime.setTargetAtTime(v / 1000, ctx.currentTime, 0.01);
+  }
+
   let dragging = false, startX = 0, startValue = 0;
 
   ruler.addEventListener('pointerdown', (e) => {
     dragging = true;
     startX = e.clientX;
     startValue = value;
+    log.drags++;
     ruler.setPointerCapture(e.pointerId);
   });
-
   ruler.addEventListener('pointermove', (e) => {
     if (!dragging) return;
-    const delta = (e.clientX - startX) / SPACING;
-    // Dragging left moves the ticks left, which increases the value
-    value = Math.round(Math.min(MAX, Math.max(MIN, startValue - delta)));
-    render();
+    const delta = (e.clientX - startX) / CONFIG.spacing;
+    setValue(Math.round(Math.min(CONFIG.valueMax, Math.max(CONFIG.valueMin, startValue - delta))));
   });
-
   const endDrag = () => { dragging = false; };
   ruler.addEventListener('pointerup', endDrag);
   ruler.addEventListener('pointercancel', endDrag);
 
-  // Metronome (visual only, independent of the delay value)
-  const playBtn = document.getElementById('playBtn');
-  const pulse = document.getElementById('pulse');
-  const iconPlay = document.getElementById('iconPlay');
-  const iconPause = document.getElementById('iconPause');
-  const playLabel = document.getElementById('playLabel');
-  let playing = false, timer = null;
+  // ---- Audio ----
+  // Two tones from the same click train. Broadcast path has a fixed hidden delay.
+  // RCA path has the user's delay. Sync happens when the user's delay equals HIDDEN_OFFSET.
+  let ctx = null, busB, busR, delayB, delayR, scheduler = null, nextBeat = 0, playing = false;
 
-  function beat() {
-    pulse.classList.remove('beat');
-    void pulse.offsetWidth; // restart animation
-    pulse.classList.add('beat');
+  function initAudio() {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    busB = ctx.createGain();
+    busR = ctx.createGain();
+    delayB = ctx.createDelay(1);
+    delayR = ctx.createDelay(1);
+    delayB.delayTime.value = HIDDEN_OFFSET / 1000;
+    delayR.delayTime.value = value / 1000;
+    busB.connect(delayB);
+    delayB.connect(ctx.destination);
+    busR.connect(delayR);
+    delayR.connect(ctx.destination);
   }
 
-  playBtn.addEventListener('click', () => {
+  function click(bus, freq, when) {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0, when);
+    g.gain.linearRampToValueAtTime(0.8, when + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.001, when + 0.03);
+    o.connect(g);
+    g.connect(bus);
+    o.start(when);
+    o.stop(when + 0.04);
+  }
+
+  function schedule() {
+    const period = 60 / CONFIG.bpm;
+    while (nextBeat < ctx.currentTime + 0.15) {
+      click(busB, 1200, nextBeat); // broadcast tone (higher)
+      click(busR, 800, nextBeat);  // RCA tone (lower)
+      nextBeat += period;
+    }
+  }
+
+  // ---- Sample button ----
+  const playBtn = document.getElementById('playBtn');
+  const btnLabel = document.getElementById('btnLabel');
+
+  function togglePlay() {
+    initAudio();
+    if (ctx.state === 'suspended') ctx.resume();
     playing = !playing;
     if (playing) {
-      beat();
-      timer = setInterval(beat, 60000 / BPM);
+      log.plays++;
+      nextBeat = ctx.currentTime + 0.05;
+      scheduler = setInterval(schedule, 25);
     } else {
-      clearInterval(timer);
-      timer = null;
+      clearInterval(scheduler);
+      scheduler = null;
     }
-    iconPlay.style.display = playing ? 'none' : 'block';
-    iconPause.style.display = playing ? 'block' : 'none';
-    playLabel.textContent = playing ? 'PAUSE' : 'PLAY';
-    playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    btnLabel.textContent = playing ? 'STOP SAMPLE' : 'PLAY SAMPLE';
+    playBtn.setAttribute('aria-label', playing ? 'Stop sample' : 'Play sample');
+  }
+
+  playBtn.addEventListener('click', togglePlay);
+
+  // ---- Flow ----
+  document.getElementById('startBtn').addEventListener('click', () => {
+    log.start = performance.now();
+    show('task');
+    render();
+  });
+
+  document.getElementById('confirmBtn').addEventListener('click', () => {
+    if (log.confirmAt !== null) return;
+    log.confirmAt = Math.round(performance.now() - log.start);
+    log.finalValue = value;
+    if (playing) togglePlay();
+    show('feedback');
+  });
+
+  // ---- Results ----
+  function buildReport() {
+    const answers = {
+      q1: document.getElementById('q1').value.trim(),
+      q2: document.getElementById('q2').value.trim(),
+      q3: document.getElementById('q3').value.trim()
+    };
+    const path = log.changes.slice(-40).map(c => `${c.t}:${c.v}`).join(' ');
+    return [
+      `Session: ${SESSION_ID}`,
+      `Hidden offset: ${HIDDEN_OFFSET} ms`,
+      `Final delay: ${log.finalValue} ms`,
+      `Error (final minus offset): ${log.finalValue - HIDDEN_OFFSET} ms`,
+      `Time to confirm: ${(log.confirmAt / 1000).toFixed(1)} s`,
+      `Sample plays: ${log.plays}`,
+      `Drag gestures: ${log.drags}`,
+      `Slider path, last 40 (ms:value): ${path}`,
+      '',
+      `How was this experience? ${answers.q1 || '-'}`,
+      `Anything confusing? ${answers.q2 || '-'}`,
+      `What would you change? ${answers.q3 || '-'}`
+    ].join('\n');
+  }
+
+  document.getElementById('sendBtn').addEventListener('click', () => {
+    const subject = `RCA sync test result ${SESSION_ID}`;
+    const link = `mailto:${CONFIG.resultsEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(buildReport())}`;
+    window.location.href = link;
+    show('done');
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    const text = buildReport();
+    const btn = document.getElementById('copyBtn');
+    const done = () => { btn.textContent = 'Copied'; };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(done, () => { window.prompt('Copy your results:', text); });
+    } else {
+      window.prompt('Copy your results:', text);
+    }
   });
 
   render();
