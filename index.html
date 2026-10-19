@@ -104,28 +104,31 @@
     cursor: pointer;
   }
 
+  /* Ruler: full width, drag anywhere inside the box */
   .ruler {
     position: absolute;
-    top: 298px;
+    top: 306px;
     left: 0;
     width: 100%;
-    height: 48px;
+    height: 80px;
     cursor: grab;
     touch-action: none;
     overflow: hidden;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 20%, #000 80%, transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0%, #000 20%, #000 80%, transparent 100%);
   }
   .ruler:active { cursor: grabbing; }
   .track {
     position: absolute;
     top: 0;
     left: 0;
-    height: 48px;
     width: 600px;
+    height: 80px;
     will-change: transform;
   }
   .tick {
     position: absolute;
-    bottom: 8px;
+    bottom: 24px;
     width: 2px;
     height: 16px;
     background: #848486;
@@ -138,20 +141,56 @@
     transition: none;
   }
 
+  /* Stepper row */
+  .stepper {
+    position: absolute;
+    top: 410px;
+    left: 0;
+    width: 100%;
+    height: 48px;
+  }
+  .step {
+    position: absolute;
+    top: 0;
+    width: 48px;
+    height: 48px;
+    background: transparent;
+    border: 1px solid #848486;
+    border-radius: 2px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #minusBtn { left: 58px; }
+  #plusBtn  { left: 284px; }
   .readout {
     position: absolute;
-    top: 352px;
+    top: 0;
     left: 0;
     width: 100%;
     text-align: center;
+    pointer-events: none;
   }
   #value {
     font-size: 48px;
     font-weight: 700;
-    line-height: 1;
+    line-height: 48px;
     font-variant-numeric: tabular-nums;
   }
-  .unit { margin-top: 10px; font-size: 15px; color: #f2f2f2; }
+  .unit {
+    position: absolute;
+    top: 66px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 15px;
+    color: #f2f2f2;
+  }
 
   .save {
     position: absolute;
@@ -198,8 +237,10 @@
     <div class="track" id="track"></div>
   </div>
 
-  <div class="readout">
-    <div id="value">0</div>
+  <div class="stepper">
+    <button class="step" id="minusBtn" aria-label="Decrease delay">&minus;</button>
+    <div class="readout"><div id="value">0</div></div>
+    <button class="step" id="plusBtn" aria-label="Increase delay">+</button>
     <div class="unit">milliseconds</div>
   </div>
 
@@ -218,7 +259,9 @@
     bpm: 60,
     valueMin: 0,
     valueMax: 75,
-    spacing: 8
+    spacing: 8,
+    holdDelay: 2000,   // ms before a held button starts repeating
+    repeatEvery: 100   // ms between repeats while held
   };
 
   // Hidden mismatch for this session, 40 to 50 ms inclusive
@@ -230,6 +273,7 @@
     hiddenOffset: HIDDEN_OFFSET,
     start: 0,
     drags: 0,
+    buttonSteps: 0,
     plays: 0,
     changes: [{ t: 0, v: 0 }],
     saveAt: null,
@@ -251,7 +295,7 @@
   for (let i = CONFIG.valueMin; i <= CONFIG.valueMax; i++) {
     const t = document.createElement('div');
     t.className = 'tick' + (i % 5 === 0 ? ' major' : '');
-    t.style.left = (i * CONFIG.spacing) + 'px';
+    t.style.left = (i * CONFIG.spacing - 1) + 'px'; // centre the 2px tick on its value
     track.appendChild(t);
     ticks.push(t);
   }
@@ -264,13 +308,16 @@
   }
 
   function setValue(v) {
-    if (v === value) return;
-    value = v;
-    log.changes.push({ t: Math.round(performance.now() - log.start), v });
+    const clamped = Math.min(CONFIG.valueMax, Math.max(CONFIG.valueMin, v));
+    if (clamped === value) return false;
+    value = clamped;
+    log.changes.push({ t: Math.round(performance.now() - log.start), v: value });
     render();
-    if (delayR) delayR.delayTime.setTargetAtTime(v / 1000, ctx.currentTime, 0.01);
+    if (delayR) delayR.delayTime.setTargetAtTime(value / 1000, ctx.currentTime, 0.01);
+    return true;
   }
 
+  // Drag anywhere inside the ruler box
   let dragging = false, startX = 0, startValue = 0;
 
   ruler.addEventListener('pointerdown', (e) => {
@@ -282,12 +329,47 @@
   });
   ruler.addEventListener('pointermove', (e) => {
     if (!dragging) return;
+    // Ticks follow the finger: dragging right moves the ticks right, so the value goes down
     const delta = (e.clientX - startX) / CONFIG.spacing;
-    setValue(Math.round(Math.min(CONFIG.valueMax, Math.max(CONFIG.valueMin, startValue - delta))));
+    setValue(Math.round(startValue - delta));
   });
   const endDrag = () => { dragging = false; };
   ruler.addEventListener('pointerup', endDrag);
   ruler.addEventListener('pointercancel', endDrag);
+
+  // ---- Step buttons: one step on press, then repeat after a hold ----
+  function attachStepper(button, direction) {
+    let holdTimer = null, repeatTimer = null;
+
+    const stepOnce = () => {
+      if (setValue(value + direction)) {
+        log.buttonSteps++;
+      }
+    };
+    const stop = () => {
+      clearTimeout(holdTimer);
+      clearInterval(repeatTimer);
+      holdTimer = null;
+      repeatTimer = null;
+    };
+
+    button.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      button.setPointerCapture(e.pointerId);
+      stepOnce();
+      holdTimer = setTimeout(() => {
+        repeatTimer = setInterval(stepOnce, CONFIG.repeatEvery);
+      }, CONFIG.holdDelay);
+    });
+    button.addEventListener('pointerup', stop);
+    button.addEventListener('pointercancel', stop);
+    button.addEventListener('pointerleave', stop);
+    // Stop the repeat if the browser cancels the touch (for example on scroll)
+    button.addEventListener('lostpointercapture', stop);
+  }
+
+  attachStepper(document.getElementById('minusBtn'), -1);
+  attachStepper(document.getElementById('plusBtn'), +1);
 
   // ---- Audio ----
   // Broadcast tone (1200 Hz) is panned left and has a fixed hidden delay.
