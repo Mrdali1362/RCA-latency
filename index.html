@@ -25,23 +25,11 @@
   .view.active { display: block; }
   .view.task { height: 844px; }
 
-  /* Intro and feedback (flow layout) */
+  /* Intro and thank-you (flow layout) */
   .pad { padding: 64px 24px 40px; }
   .pad h1 { font-size: 22px; margin-bottom: 16px; }
   .pad p { font-size: 15px; line-height: 22px; color: #f2f2f2; margin-bottom: 16px; }
-  .pad label { display: block; font-size: 15px; font-weight: 700; margin: 20px 0 8px; }
-  .pad textarea {
-    width: 100%;
-    min-height: 80px;
-    padding: 10px;
-    font-family: inherit;
-    font-size: 15px;
-    background: rgba(0,0,0,0.25);
-    color: #fff;
-    border: 1px solid #848486;
-    border-radius: 4px;
-  }
-  .small { font-size: 13px; color: #c8c8c8; }
+  .pad .small { font-size: 13px; color: #c8c8c8; }
 
   .btn {
     display: block;
@@ -52,13 +40,12 @@
     font-size: 15px;
     font-weight: 700;
     letter-spacing: 0.3px;
-    border-radius: 4px;
+    border-radius: 2px;
     cursor: pointer;
     background: #fff;
     color: #1a1a1a;
     border: 1px solid #fff;
   }
-  .btn.outline { background: transparent; color: #fff; }
 
   /* Task screen */
   .back {
@@ -97,15 +84,13 @@
     line-height: 22px;
     color: #f2f2f2;
   }
-  #metroHeading  { top: 116px; }
-  #metroBody     { top: 142px; }
-  #adjustHeading { top: 320px; }
-  #adjustBody    { top: 346px; }
+  #adjustHeading { top: 116px; }
+  #adjustBody    { top: 142px; }
 
   .sample {
     position: absolute;
     left: 16px;
-    top: 232px;
+    top: 208px;
     width: 358px;
     height: 48px;
     background: transparent;
@@ -121,7 +106,7 @@
 
   .ruler {
     position: absolute;
-    top: 438px;
+    top: 298px;
     left: 0;
     width: 100%;
     height: 48px;
@@ -155,7 +140,7 @@
 
   .readout {
     position: absolute;
-    top: 492px;
+    top: 352px;
     left: 0;
     width: 100%;
     text-align: center;
@@ -168,10 +153,10 @@
   }
   .unit { margin-top: 10px; font-size: 15px; color: #f2f2f2; }
 
-  .confirm {
+  .save {
     position: absolute;
     left: 16px;
-    top: 640px;
+    top: 739px;
     width: 358px;
     height: 48px;
     border-radius: 2px;
@@ -192,9 +177,8 @@
 <section class="view pad active" id="intro">
   <h1>RCA Latency Test</h1>
   <p>We would like to test our prototype for adjusting RCA latency for speakers that are connected via RCA output to Heddon.</p>
-  <p>You will hear two sounds. Start by playing the sample, then adjust the delay based on what you hear. Tap "Confirm sync" when you think they match.</p>
-  <p>At the end of the test, we will ask you 3 simple questions to understand how and if the prototype matches what you expected it to do. Your answers will be sent to us in the app team and will be removed after this short study.</p>
-  <p class="small">We record your delay adjustments, timings and the answers you give at the end. Results are only sent if you tap "Send results", from your own mail app, so your name and email address will be visible to us. All data will be removed at the end of the study.</p>
+  <p>Play the sample and adjust the delay until the two sounds line up. Tap Save when you're done.</p>
+  <p class="small">We record your delay adjustments and timings. All data will be removed at the end of the study.</p>
   <button class="btn" id="startBtn">Start</button>
 </section>
 
@@ -205,13 +189,10 @@
   </button>
   <div class="title">RCA LATENCY</div>
 
-  <div class="heading" id="metroHeading">METRONOME</div>
-  <div class="body-text" id="metroBody">Play the 60 BPM metronome sample to help you adjust the audio output of your RCA-connected speaker to match the rest of your system.</div>
+  <div class="heading" id="adjustHeading">ADJUST AUDIO DELAY</div>
+  <div class="body-text" id="adjustBody">Play the audio sample and use the slider to adjust the delay between RCA and Broadcasted audio.</div>
 
   <button class="sample" id="playBtn"><span id="btnLabel">PLAY SAMPLE</span></button>
-
-  <div class="heading" id="adjustHeading">ADJUST DELAY</div>
-  <div class="body-text" id="adjustBody">Change the audio delay on the RCA out port to sync with the broadcast audio.</div>
 
   <div class="ruler" id="ruler">
     <div class="track" id="track"></div>
@@ -222,32 +203,18 @@
     <div class="unit">milliseconds</div>
   </div>
 
-  <button class="confirm" id="confirmBtn">CONFIRM SYNC</button>
+  <button class="save" id="saveBtn">SAVE</button>
 </section>
 
-<!-- 3. Feedback -->
-<section class="view pad" id="feedback">
-  <h1>A few questions</h1>
-  <label for="q1">How was this experience?</label>
-  <textarea id="q1"></textarea>
-  <label for="q2">Was anything confusing?</label>
-  <textarea id="q2"></textarea>
-  <label for="q3">If you could change one thing, what would it be?</label>
-  <textarea id="q3"></textarea>
-  <button class="btn" id="sendBtn">Send results</button>
-  <button class="btn outline" id="copyBtn">Copy results instead</button>
-</section>
-
-<!-- 4. Done -->
+<!-- 3. Thank you -->
 <section class="view pad" id="done">
   <h1>Thank you</h1>
-  <p>Your results are ready to send. You can close this page.</p>
+  <p>Your adjustments have been saved. You can close this page.</p>
 </section>
 
 <script>
   // ---- Config ----
   const CONFIG = {
-    resultsEmail: 'ali.dehghanpour@marshall.com',
     bpm: 60,
     valueMin: 0,
     valueMax: 75,
@@ -259,11 +226,13 @@
   const SESSION_ID = Math.random().toString(36).slice(2, 8).toUpperCase();
 
   const log = {
+    session: SESSION_ID,
+    hiddenOffset: HIDDEN_OFFSET,
     start: 0,
     drags: 0,
     plays: 0,
     changes: [{ t: 0, v: 0 }],
-    confirmAt: null,
+    saveAt: null,
     finalValue: null
   };
 
@@ -321,8 +290,9 @@
   ruler.addEventListener('pointercancel', endDrag);
 
   // ---- Audio ----
-  // Two tones from the same click train. Broadcast path has a fixed hidden delay.
-  // RCA path has the user's delay. Sync happens when the user's delay equals HIDDEN_OFFSET.
+  // Broadcast tone (1200 Hz) is panned left and has a fixed hidden delay.
+  // RCA tone (800 Hz) is panned right and has the user's delay.
+  // Sync happens when the user's delay equals HIDDEN_OFFSET.
   let ctx = null, busB, busR, delayB, delayR, scheduler = null, nextBeat = 0, playing = false;
 
   function initAudio() {
@@ -334,10 +304,19 @@
     delayR = ctx.createDelay(1);
     delayB.delayTime.value = HIDDEN_OFFSET / 1000;
     delayR.delayTime.value = value / 1000;
+
+    const panB = ctx.createStereoPanner();
+    const panR = ctx.createStereoPanner();
+    panB.pan.value = -1;
+    panR.pan.value = 1;
+
     busB.connect(delayB);
-    delayB.connect(ctx.destination);
+    delayB.connect(panB);
+    panB.connect(ctx.destination);
+
     busR.connect(delayR);
-    delayR.connect(ctx.destination);
+    delayR.connect(panR);
+    panR.connect(ctx.destination);
   }
 
   function click(bus, freq, when) {
@@ -357,13 +336,13 @@
   function schedule() {
     const period = 60 / CONFIG.bpm;
     while (nextBeat < ctx.currentTime + 0.15) {
-      click(busB, 1200, nextBeat); // broadcast tone (higher)
-      click(busR, 800, nextBeat);  // RCA tone (lower)
+      click(busB, 1200, nextBeat);
+      click(busR, 800, nextBeat);
       nextBeat += period;
     }
   }
 
-  // ---- Sample button ----
+  // ---- Play sample button ----
   const playBtn = document.getElementById('playBtn');
   const btnLabel = document.getElementById('btnLabel');
 
@@ -392,54 +371,16 @@
     render();
   });
 
-  document.getElementById('confirmBtn').addEventListener('click', () => {
-    if (log.confirmAt !== null) return;
-    log.confirmAt = Math.round(performance.now() - log.start);
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    if (log.saveAt !== null) return;
+    log.saveAt = Math.round(performance.now() - log.start);
     log.finalValue = value;
     if (playing) togglePlay();
-    show('feedback');
-  });
-
-  // ---- Results ----
-  function buildReport() {
-    const answers = {
-      q1: document.getElementById('q1').value.trim(),
-      q2: document.getElementById('q2').value.trim(),
-      q3: document.getElementById('q3').value.trim()
-    };
-    const path = log.changes.slice(-40).map(c => `${c.t}:${c.v}`).join(' ');
-    return [
-      `Session: ${SESSION_ID}`,
-      `Hidden offset: ${HIDDEN_OFFSET} ms`,
-      `Final delay: ${log.finalValue} ms`,
-      `Error (final minus offset): ${log.finalValue - HIDDEN_OFFSET} ms`,
-      `Time to confirm: ${(log.confirmAt / 1000).toFixed(1)} s`,
-      `Sample plays: ${log.plays}`,
-      `Drag gestures: ${log.drags}`,
-      `Slider path, last 40 (ms:value): ${path}`,
-      '',
-      `How was this experience? ${answers.q1 || '-'}`,
-      `Anything confusing? ${answers.q2 || '-'}`,
-      `What would you change? ${answers.q3 || '-'}`
-    ].join('\n');
-  }
-
-  document.getElementById('sendBtn').addEventListener('click', () => {
-    const subject = `RCA sync test result ${SESSION_ID}`;
-    const link = `mailto:${CONFIG.resultsEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(buildReport())}`;
-    window.location.href = link;
+    console.log('RCA sync test result', {
+      ...log,
+      error: log.finalValue - HIDDEN_OFFSET
+    });
     show('done');
-  });
-
-  document.getElementById('copyBtn').addEventListener('click', () => {
-    const text = buildReport();
-    const btn = document.getElementById('copyBtn');
-    const done = () => { btn.textContent = 'Copied'; };
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(done, () => { window.prompt('Copy your results:', text); });
-    } else {
-      window.prompt('Copy your results:', text);
-    }
   });
 
   render();
