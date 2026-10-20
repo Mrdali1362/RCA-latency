@@ -212,6 +212,7 @@
   // Save: confirmation only
   var toastT;
   el.save.addEventListener('click', function () {
+    if (playing) stopAudio();
     clearTimeout(toastT);
     el.toast.textContent = 'SAVED · ' + value + ' MS';
     toastT = setTimeout(function () { el.toast.textContent = ''; }, 2200);
